@@ -1,6 +1,5 @@
-import { createProgram, initUI, initWebGL, getGLColor } from './utils';
+import { createProgram, initWebGL, getGLColor } from './utils';
 import { Matrix4 } from './maff';
-import { get } from 'http';
 
 const VSHADER_SOURCE = `
   attribute vec4 a_Position;
