@@ -177,7 +177,7 @@ export class Vector4 {
 }
 export class Matrix4 {
   elements: Float32Array = new Float32Array(16);
-  constructor(opt_src?: Matrix4 | Float32Array) {
+  constructor(opt_src?: Matrix4 ) {
     var i, s, d;
     if (
       opt_src &&
