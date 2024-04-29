@@ -35,6 +35,7 @@ main();
 
 
 class Cube {
+  id:string ="";
   m: Matrix4;
   color: number[];
   gl: WebGLRenderingContext;
@@ -43,7 +44,8 @@ class Cube {
   vertexBuffer: WebGLBuffer;
   gl_pos: number;
   unit: number = 0.25;
-  constructor(gl: WebGLRenderingContext, program: WebGLProgram, color?: number[]) {
+  constructor(gl: WebGLRenderingContext, program: WebGLProgram, color?: number[], id?: string) {
+    this.id = id || "";
     this.color = color || [255, 255, 255, 1];
     this.m = new Matrix4();
     this.gl = gl;
@@ -264,13 +266,13 @@ class Model {
   makeBody() {
     
     let color = [235, 206, 76, 1];
-    let torso = new Cube(this.gl, this.program, color);
+    let torso = new Cube(this.gl, this.program, color, "torso");
     torso.m.scale(0.3, 0.3, 0.5);
     torso.m.translate(-0.5, -0.5, -0.5);
     this.addPart(torso);
 
     color = [241, 203, 65, 1];
-    let neck = new Cube(this.gl, this.program, color);
+    let neck = new Cube(this.gl, this.program, color, "neck");
     neck.m.rotate(-25, 1, 0, 0);
     neck.m.scale(0.18, 0.8, 0.18);
     neck.m.translate(-0.5, 0, -1);
@@ -278,21 +280,21 @@ class Model {
     //tilt the neck forward
 
     color = [247, 196, 9, 1]
-    let head = new Cube(this.gl, this.program, color);
+    let head = new Cube(this.gl, this.program, color, "head");
     head.m.rotate(-10, 1,0,0)
     head.m.scale(0.2, 0.2, 0.3);
     head.m.translate(-0.5, 3.5, -2);
     this.addPart(head);
 
     color = [238, 155, 77, 1]
-    let weird_mustache = new Cube(this.gl, this.program, color);
+    let weird_mustache = new Cube(this.gl, this.program, color, "weird_mustache");
     weird_mustache.m.rotate(-10, 1,0,0)
     weird_mustache.m.scale(0.21, 0.21, 0.05);
     weird_mustache.m.translate(-0.5, 3.3, -13);
     this.addPart(weird_mustache);
     
     color = [255,255,255,1]
-    let eye_left = new Cube(this.gl, this.program, color);
+    let eye_left = new Cube(this.gl, this.program, color, "eye_left");
     eye_left.m.scale(0.05, 0.05, 0.05);
     eye_left.m.translate(2, 15, -12);
     eye_left.m.rotate(-10, 1,0,0)
@@ -300,7 +302,7 @@ class Model {
     this.addPart(eye_left);
     
     color = [1,1,1,1]
-    let pupil_left = new Cube(this.gl, this.program, color);
+    let pupil_left = new Cube(this.gl, this.program, color, "pupil_left");
     pupil_left.m.scale(0.05, 0.05, 0.05);
     pupil_left.m.translate(2, 15, -13);
     pupil_left.m.scale(0.5, 0.5, 0.5);
@@ -309,7 +311,7 @@ class Model {
     this.addPart(pupil_left);
 
     color = [255,255,255,1]
-    let eye_right = new Cube(this.gl, this.program, color);
+    let eye_right = new Cube(this.gl, this.program, color, "eye_right");
     eye_right.m.scale(0.05, 0.05, 0.05);
     eye_right.m.translate(-3, 15, -12);
     eye_right.m.rotate(-10, 1,0,0)
@@ -317,7 +319,7 @@ class Model {
     this.addPart(eye_right);
     
     color = [5,5,5,1]
-    let pupil_right = new Cube(this.gl, this.program, color);
+    let pupil_right = new Cube(this.gl, this.program, color, "pupil_right");
     pupil_right.m.scale(0.05, 0.05, 0.05);
     pupil_right.m.translate(-2.75, 15, -13);
     pupil_right.m.scale(0.5, 0.5, 0.5);
@@ -325,6 +327,29 @@ class Model {
     pupil_right.m.rotate(-10, 1,0,0)
     this.addPart(pupil_right);
 
+    color = [255, 0, 0, 1];
+    let front_left_leg = new Cube(this.gl, this.program, color, "front_left_leg");
+    front_left_leg.m.scale(0.1, 0.6, 0.1);
+    front_left_leg.m.translate(-1.2, -1, -2);
+    this.addPart(front_left_leg);
+
+    color = [255, 0, 0, 1];
+    let front_right_leg = new Cube(this.gl, this.program, color, "front_right_leg");
+    front_right_leg.m.scale(0.1, 0.6, 0.1);
+    front_right_leg.m.translate(0.2, -1, -2);
+    this.addPart(front_right_leg);
+
+    color = [255, 0, 0, 1];
+    let back_left_leg = new Cube(this.gl, this.program, color, "back_left_leg");
+    back_left_leg.m.scale(0.1, 0.6, 0.1);
+    back_left_leg.m.translate(-1.2, -1, 1);
+    this.addPart(back_left_leg);
+
+    color = [255, 0, 0, 1];
+    let back_right_leg = new Cube(this.gl, this.program, color, "back_right_leg");
+    back_right_leg.m.scale(0.1, 0.6, 0.1);
+    back_right_leg.m.translate(0.2, -1, 1);
+    this.addPart(back_right_leg);
 
 
 
