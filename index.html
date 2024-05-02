@@ -8,11 +8,16 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app">
+    <div id="app" style="flex-direction: column;">
       <canvas id="webgl" width="400" height="400"></canvas>
-      
+        <p> Animation: 
+          <input type="button" id="animationOn" value="On">
+          <input type="button" id="animationOff" value="Off">
+        </p>        
+
     </div>
     <script type="module" src="/src/main.ts"></script>
+
   </body>
   
 </html>

@@ -1,6 +1,6 @@
 import { createProgram, initWebGL, getGLColor } from './utils';
 import { Matrix4 } from './maff';
-
+// My name is Aaron Lee and I suck at coding.
 const VSHADER_SOURCE = `
   attribute vec4 a_Position;
   uniform mat4 u_ModelMatrix;
@@ -32,7 +32,7 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 main();
-
+let scroll = 1;
 
 class Cube {
   id: string = "";
@@ -319,33 +319,33 @@ class Sphere {
 
     // Generate the vertices and normals for the sphere
     for (let latNumber = 0; latNumber <= latitudeBands; latNumber++) {
-        const theta = latNumber * Math.PI / latitudeBands;
-        const sinTheta = Math.sin(theta);
-        const cosTheta = Math.cos(theta);
+      const theta = latNumber * Math.PI / latitudeBands;
+      const sinTheta = Math.sin(theta);
+      const cosTheta = Math.cos(theta);
 
-        for (let longNumber = 0; longNumber <= longitudeBands; longNumber++) {
-            const phi = longNumber * 2 * Math.PI / longitudeBands;
-            const sinPhi = Math.sin(phi);
-            const cosPhi = Math.cos(phi);
+      for (let longNumber = 0; longNumber <= longitudeBands; longNumber++) {
+        const phi = longNumber * 2 * Math.PI / longitudeBands;
+        const sinPhi = Math.sin(phi);
+        const cosPhi = Math.cos(phi);
 
-            const x = cosPhi * sinTheta;
-            const y = cosTheta;
-            const z = sinPhi * sinTheta;
+        const x = cosPhi * sinTheta;
+        const y = cosTheta;
+        const z = sinPhi * sinTheta;
 
-            normals.push(x, y, z);
-            vertices.push(this.radius * x, this.radius * y, this.radius * z);
-        }
+        normals.push(x, y, z);
+        vertices.push(this.radius * x, this.radius * y, this.radius * z);
+      }
     }
 
     // Calculate the indices for each square patch
     for (let latNumber = 0; latNumber < latitudeBands; latNumber++) {
-        for (let longNumber = 0; longNumber < longitudeBands; longNumber++) {
-            const first = (latNumber * (longitudeBands + 1)) + longNumber;
-            const second = first + longitudeBands + 1;
+      for (let longNumber = 0; longNumber < longitudeBands; longNumber++) {
+        const first = (latNumber * (longitudeBands + 1)) + longNumber;
+        const second = first + longitudeBands + 1;
 
-            indices.push(first, second, first + 1);
-            indices.push(second, second + 1, first + 1);
-        }
+        indices.push(first, second, first + 1);
+        indices.push(second, second + 1, first + 1);
+      }
     }
 
     // Bind and buffer vertex data
@@ -365,7 +365,7 @@ class Sphere {
 
     // Draw the sphere using indexed triangles
     this.gl.drawElements(this.gl.TRIANGLES, indices.length, this.gl.UNSIGNED_SHORT, 0);
-}
+  }
 
 
 }
@@ -405,6 +405,7 @@ class Camera {
     this.m.rotate(-this.angleX, 1, 0, 0);
     this.m.rotate(this.angleY, 0, 1, 0);
     this.m.rotate(this.angleZ, 0, 0, 1);
+    
 
 
     this.lastX = x;
@@ -420,8 +421,11 @@ class Model {
   gl: WebGLRenderingContext;
   program: WebGLProgram;
   moving: boolean = false;
+  UIElements: any[];
+  anim: boolean = false;
   constructor(gl: WebGLRenderingContext, program: WebGLProgram) {
     this.parts = [];
+    this.UIElements = [];
     this.camera = new Camera();
     this.gl = gl;
     this.program = program;
@@ -464,7 +468,7 @@ class Model {
 
     // horn_ball_left.m.translate(0.4, 8, -4.8);
     this.addPart(horn_ball_left);
-    
+
     color = [107, 55, 16, 1]
     let horn_ball_right = new Sphere(this.gl, this.program, 0.3, 0.3, color, "horn_ball_left");
     horn_ball_right.m.scale(0.1, 0.1, 0.1);
@@ -560,20 +564,43 @@ class Model {
     tail.m.translate(-0.5, -0.6, 2.5);
     this.addPart(tail);
 
-
-
-
-
-
-
   }
   addPart(part: Cube | Cone | Sphere) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(part.id));
+    const foo = document.createElement('input')
+    foo.type = "range";
+    foo.value = '0';
+    foo.min = "-10";
+    foo.max = "10";
+    foo.id = part.id;
+    foo.addEventListener('input', (e) => {
+      part.m.rotate(parseInt(foo.value), 1, 0, 0);
+    });
+    div.appendChild(foo);
+    document.querySelector('#app')?.appendChild(div);
     this.parts.push(part);
   }
   attachCamera(camera: Camera) {
     this.camera = camera;
   }
+
+  animate() {
+    let back_left_thigh = this.parts.find((part) => part.id === "back_left_thigh") as Cube;
+    back_left_thigh.m.rotate(1, 0, 0, 0.1);
+    let back_right_thigh = this.parts.find((part) => part.id === "back_right_thigh");
+    let rest = this.parts.filter((part) => part.id !== "back_left_thigh" && part.id !== "back_right_thigh");  
+  }
   draw() {
+    if(this.anim){ this.animate();}
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.camera.m.scale(scroll, scroll, scroll);
+    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_GlobalRotateMatrix"), false, this.camera.m.elements);
+    const translateMatrix = new Matrix4();
+    translateMatrix.setTranslate(0, 0, 0);
+    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_GlobalTranslateMatrix"), false, translateMatrix.elements);
+
+
     for (const part of this.parts) {
       part.draw();
     }
@@ -592,6 +619,7 @@ class Model {
     axis_z.m.translate(0, 0, -0.5);
     axis_z.draw();
   }
+
   beginRotate(e: MouseEvent) {
     this.moving = true;
     const [x, y] = this.camera.convertMouseToEventCoords(e);
@@ -605,12 +633,6 @@ class Model {
     }
     this.camera.rotateCamera(e);
 
-
-    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_GlobalRotateMatrix"), false, this.camera.m.elements);
-    const translateMatrix = new Matrix4();
-    translateMatrix.setTranslate(0, 0, 0);
-    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_GlobalTranslateMatrix"), false, translateMatrix.elements);
-
     // clear the canvas
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -623,32 +645,48 @@ class Model {
 }
 
 
-
-let advaith = new Model(gl, program);
-advaith.makeBody();
-advaith.draw();
+let giraffe = new Model(gl, program);
+giraffe.makeBody();
 
 canvas.addEventListener('mousedown', (e) => {
-  advaith.beginRotate(e);
+  giraffe.beginRotate(e);
 });
 
+canvas.addEventListener('wheel', (e: WheelEvent) => {
+  giraffe.beginRotate(e);
+  scroll += e.deltaY * -0.001;
+  giraffe.endRotate();
+  
+})
+
 document.addEventListener('mousemove', (e) => {
-  if (advaith.moving && e.target === canvas) {
-    advaith.rotateCamera(e);
+  if (giraffe.moving && e.target === canvas) {
+    giraffe.rotateCamera(e);
   }
 });
 
 canvas.addEventListener('mouseup', () => {
-  advaith.endRotate();
+  giraffe.endRotate();
 });
-// canvas.addEventListener('mouseleave', () => {
-//   advaith.endRotate();
-// })
 
 canvas.addEventListener('mouseenter', (e) => {
-  if (advaith.moving) {
-    advaith.rotateCamera(e);
-  } else {
-    advaith.endRotate();
+  giraffe.rotateCamera(e);
+  if (!giraffe.moving) {
+    giraffe.endRotate();
   }
 });
+const animOn = document.querySelector('#animationOn') as HTMLButtonElement;
+const animOff = document.querySelector('#animationOff') as HTMLButtonElement;
+
+animOn.addEventListener('click', () => {
+  giraffe.anim = true;
+});
+animOff.addEventListener('click', () => {
+  giraffe.anim = false;
+});
+function render() {
+  giraffe.draw();
+  scroll = 1;
+  requestAnimationFrame(render);
+}
+render();
