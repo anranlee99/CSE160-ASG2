@@ -215,7 +215,7 @@ class Cone {
   gl_pos: number;
   unit: number = 0.25;
   radius: number;
-  height: number; 
+  height: number;
   constructor(gl: WebGLRenderingContext, program: WebGLProgram, radius: number, height: number, color?: number[], id?: string) {
     this.id = id || "";
     this.color = color || [255, 255, 255, 1];
@@ -262,7 +262,7 @@ class Cone {
     this.gl.uniform4fv(aColorPtr, getGLColor(this.color));
 
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.DYNAMIC_DRAW);
-    
+
     // Drawing the base
     this.gl.drawArrays(this.gl.TRIANGLE_FAN, 1, numSegments); // Start at 1 to skip the apex
 
@@ -270,6 +270,104 @@ class Cone {
     // Drawing the sides
     this.gl.drawArrays(this.gl.TRIANGLE_FAN, 0, numSegments + 1);
   }
+}
+
+class Sphere {
+  id: string = "";
+  m: Matrix4;
+  color: number[];
+  gl: WebGLRenderingContext;
+  program: WebGLProgram;
+  vertices: Float32Array;
+  vertexBuffer: WebGLBuffer;
+  gl_pos: number;
+  unit: number = 0.25;
+  radius: number;
+  height: number;
+  constructor(gl: WebGLRenderingContext, program: WebGLProgram, radius: number, height: number, color?: number[], id?: string) {
+    this.id = id || "";
+    this.color = color || [255, 255, 255, 1];
+    this.m = new Matrix4();
+    this.gl = gl;
+    this.program = program;
+    this.vertices = new Float32Array(9);
+
+    this.radius = radius;
+    this.height = height;
+
+    this.vertexBuffer = this.gl.createBuffer() as WebGLBuffer;
+    if (!this.vertexBuffer) {
+      console.log("Failed to create the buffer object");
+    }
+    this.gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+
+
+    this.gl_pos = this.gl.getAttribLocation(program, "a_Position");
+
+    if (this.gl_pos < 0) {
+      console.error("Could not find aPosition ptr");
+    }
+  }
+
+  draw() {
+    const latitudeBands = 30;
+    const longitudeBands = 30;
+
+    let vertices = [];
+    let normals = [];
+    let indices = [];
+
+    // Generate the vertices and normals for the sphere
+    for (let latNumber = 0; latNumber <= latitudeBands; latNumber++) {
+        const theta = latNumber * Math.PI / latitudeBands;
+        const sinTheta = Math.sin(theta);
+        const cosTheta = Math.cos(theta);
+
+        for (let longNumber = 0; longNumber <= longitudeBands; longNumber++) {
+            const phi = longNumber * 2 * Math.PI / longitudeBands;
+            const sinPhi = Math.sin(phi);
+            const cosPhi = Math.cos(phi);
+
+            const x = cosPhi * sinTheta;
+            const y = cosTheta;
+            const z = sinPhi * sinTheta;
+
+            normals.push(x, y, z);
+            vertices.push(this.radius * x, this.radius * y, this.radius * z);
+        }
+    }
+
+    // Calculate the indices for each square patch
+    for (let latNumber = 0; latNumber < latitudeBands; latNumber++) {
+        for (let longNumber = 0; longNumber < longitudeBands; longNumber++) {
+            const first = (latNumber * (longitudeBands + 1)) + longNumber;
+            const second = first + longitudeBands + 1;
+
+            indices.push(first, second, first + 1);
+            indices.push(second, second + 1, first + 1);
+        }
+    }
+
+    // Bind and buffer vertex data
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertices), this.gl.STATIC_DRAW);
+    this.gl.vertexAttribPointer(this.gl_pos, 3, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(this.gl_pos);
+
+    // Index buffer
+    const indexBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), this.gl.STATIC_DRAW);
+
+    // Set up uniforms and draw the sphere
+    this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_ModelMatrix"), false, this.m.elements);
+    this.gl.uniform4fv(this.gl.getUniformLocation(this.program, "u_FragColor"), getGLColor(this.color));
+
+    // Draw the sphere using indexed triangles
+    this.gl.drawElements(this.gl.TRIANGLES, indices.length, this.gl.UNSIGNED_SHORT, 0);
+}
+
+
 }
 
 class Camera {
@@ -317,7 +415,7 @@ class Camera {
 }
 
 class Model {
-  parts: Array<Cube | Cone>;
+  parts: Array<Cube | Cone | Sphere>;
   camera: Camera;
   gl: WebGLRenderingContext;
   program: WebGLProgram;
@@ -354,12 +452,28 @@ class Model {
     this.addPart(head);
 
     color = [247, 196, 9, 1]
-    let horn_stem_left = new Cone(this.gl, this.program,0.3, 1.2, color, "horn_stem_left");
+    let horn_stem_left = new Cone(this.gl, this.program, 0.3, 1.2, color, "horn_stem_left");
     horn_stem_left.m.scale(0.1, 0.1, 0.1);
     horn_stem_left.m.translate(0.4, 8, -4.8);
     this.addPart(horn_stem_left);
 
-    let horn_stem_right = new Cone(this.gl, this.program,0.3, 1.2, color, "horn_stem_right");
+    color = [107, 55, 16, 1]
+    let horn_ball_left = new Sphere(this.gl, this.program, 0.3, 0.3, color, "horn_ball_left");
+    horn_ball_left.m.scale(0.1, 0.1, 0.1);
+    horn_ball_left.m.translate(0.48, 9.3, -4.8);
+
+    // horn_ball_left.m.translate(0.4, 8, -4.8);
+    this.addPart(horn_ball_left);
+    
+    color = [107, 55, 16, 1]
+    let horn_ball_right = new Sphere(this.gl, this.program, 0.3, 0.3, color, "horn_ball_left");
+    horn_ball_right.m.scale(0.1, 0.1, 0.1);
+    horn_ball_right.m.translate(-0.48, 9.3, -4.8);
+    this.addPart(horn_ball_right);
+
+
+    color = [247, 196, 9, 1]
+    let horn_stem_right = new Cone(this.gl, this.program, 0.3, 1.2, color, "horn_stem_right");
     horn_stem_right.m.scale(0.1, 0.1, 0.1);
     horn_stem_right.m.translate(-0.4, 8, -4.8);
     this.addPart(horn_stem_right);
@@ -431,12 +545,12 @@ class Model {
     this.addPart(front_right_calf);
 
     let back_left_thigh = new Cube(this.gl, this.program, color, "back_left_thigh");
-    back_left_thigh.m.scale(0.15, 0.7, 0.2);
+    back_left_thigh.m.scale(0.12, 0.7, 0.2);
     back_left_thigh.m.translate(-1.2, -1, 0.5);
     this.addPart(back_left_thigh);
 
     let back_right_thigh = new Cube(this.gl, this.program, color, "back_right_thigh");
-    back_right_thigh.m.scale(0.15, 0.7, 0.2);
+    back_right_thigh.m.scale(0.12, 0.7, 0.2);
     back_right_thigh.m.translate(0.3, -1, 0.5);
     this.addPart(back_right_thigh);
 
@@ -453,7 +567,7 @@ class Model {
 
 
   }
-  addPart(part: Cube | Cone) {
+  addPart(part: Cube | Cone | Sphere) {
     this.parts.push(part);
   }
   attachCamera(camera: Camera) {
