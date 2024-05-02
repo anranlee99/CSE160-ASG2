@@ -405,7 +405,7 @@ class Camera {
     this.m.rotate(-this.angleX, 1, 0, 0);
     this.m.rotate(this.angleY, 0, 1, 0);
     this.m.rotate(this.angleZ, 0, 0, 1);
-    
+
 
 
     this.lastX = x;
@@ -585,14 +585,31 @@ class Model {
     this.camera = camera;
   }
 
-  animate() {
-    let back_left_thigh = this.parts.find((part) => part.id === "back_left_thigh") as Cube;
-    back_left_thigh.m.rotate(1, 0, 0, 0.1);
+  animate(deltaTime: number) {
+    // Time factor to control the speed of the animation
+    const speed = 0.01;
+    const angleAmplitude = 0.5; // Max angle for rotation
+
+    // Calculate the rotation angle based on time
+    const angle = Math.sin(deltaTime * speed) * angleAmplitude;
+
+    // Rotate the back left thigh
+    let back_left_thigh = this.parts.find((part) => part.id === "back_left_thigh");
+    if (back_left_thigh) {
+      // Apply rotation around the x-axis at the pivot point
+      back_left_thigh.m.rotate(1, 0, 0, angle);
+    }
+
+    // Rotate the back right thigh with opposite phase
     let back_right_thigh = this.parts.find((part) => part.id === "back_right_thigh");
-    let rest = this.parts.filter((part) => part.id !== "back_left_thigh" && part.id !== "back_right_thigh");  
+    if (back_right_thigh) {
+      // Apply rotation around the x-axis at the pivot point
+      back_right_thigh.m.rotate(1, 0, 0, -angle);
+    }
   }
-  draw() {
-    if(this.anim){ this.animate();}
+
+  draw(deltaTime: number = 0) {
+    if (this.anim) { this.animate(deltaTime); }
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.camera.m.scale(scroll, scroll, scroll);
     this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.program, "u_GlobalRotateMatrix"), false, this.camera.m.elements);
@@ -656,7 +673,7 @@ canvas.addEventListener('wheel', (e: WheelEvent) => {
   giraffe.beginRotate(e);
   scroll += e.deltaY * -0.001;
   giraffe.endRotate();
-  
+
 })
 
 document.addEventListener('mousemove', (e) => {
@@ -684,8 +701,22 @@ animOn.addEventListener('click', () => {
 animOff.addEventListener('click', () => {
   giraffe.anim = false;
 });
+
+let time_since_last_frame = performance.now();
+let lastUpdateTime = 0;
+const updateInterval = 1000;
+const fpsel = document.querySelector('#fps') as HTMLParagraphElement;
 function render() {
-  giraffe.draw();
+  const now = performance.now();
+  const delta = now - time_since_last_frame;
+  time_since_last_frame = now;
+  const fps = 1000 / delta;
+  if (now - lastUpdateTime > updateInterval) {
+    fpsel.innerText = `ms: ${Math.round(delta)}FPS: ${Math.round(fps)}`;
+    lastUpdateTime = now;
+
+  }
+  giraffe.draw(delta);
   scroll = 1;
   requestAnimationFrame(render);
 }
