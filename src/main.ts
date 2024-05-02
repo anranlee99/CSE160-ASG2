@@ -574,7 +574,7 @@ class Model {
     foo.min = "-10";
     foo.max = "10";
     foo.id = part.id;
-    foo.addEventListener('input', (e) => {
+    foo.addEventListener('input', () => {
       part.m.rotate(parseInt(foo.value), 1, 0, 0);
     });
     div.appendChild(foo);
